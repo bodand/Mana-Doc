@@ -106,9 +106,24 @@ sub new :prototype($%) {
     Carp::croak("incorrect arity of arguments passed to constructor of @{[ __PACKAGE__ ]}");
   }
   my %opts = (@_);
+  my $output = undef;
+
+  if (ref($opts{output}) eq 'SCALAR'
+      || ref($opts{output}) eq 'ARRAY'
+      || ref($opts{output}) eq 'GLOB') {
+    $output = $opts{output};
+  }
+  elsif (ref($opts{output}) eq '') {
+    local $! = 0;
+    open $output, '>', $opts{output}
+        or die "cannot open output file: $opts{output}: $!";
+  }
+  else {
+    Carp::croak('cannot use output of type ' . ref($opts{output}));
+  }
 
   my $self = {
-      output       => $opts{output},
+      output       => $output,
       omit_css     => $opts{omit_css} // 0,
       embed_css    => $opts{embed_css} // 1,
       ext_css_name => $opts{ext_css_name} // 'pod_html5.css',
