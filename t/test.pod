@@ -1,0 +1,73 @@
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+test - Test POD document
+
+=head1 VERSION
+
+v1
+
+=head1 DESCRIPTION
+
+This is a test document for the module Pod::HTML5.
+
+=over 2
+
+=item this is an item
+
+This is some text
+
+=item more item
+
+more text
+
+=back
+
+Some simple text here
+
+ and a code block, because that's always fun
+ more
+ lines
+ because
+ single line code blocks look stupid in most cases
+
+=over 2
+
+=item 1
+
+A numbered list!!
+
+=item 2
+
+How cool
+
+=item 3
+
+So numeric
+
+=back
+
+=for html This is some HTML specific code. <br> Funky.
+
+=over 2
+
+=item A non-numbered list?
+
+=item That is not a definition list?
+
+=item It exists!
+
+=back
+
+=head1 AUTHORS
+
+András Bodor E<lt>bodand@pm.meE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+This file is public domain. (How generous of me.)
+
+=cut

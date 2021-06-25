@@ -1,0 +1,12 @@
+## Dist::Milla ##
+/Mana-Doc-*
+/.build
+/_build*
+/Build
+MYMETA.*
+!META.json
+/.prove
+
+## IntelliJ Tooling ##
+.idea/
+_Deparsed_XSubs.pm
