@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/script/perl
 use strict;
 use warnings;
 use Test2::V0;
