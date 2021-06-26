@@ -3,6 +3,7 @@
 /.build
 /_build*
 /Build
+/Build.bat
 MYMETA.*
 !META.json
 /.prove

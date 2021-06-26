@@ -70,8 +70,6 @@ The C<< HE<lt>E<gt> >> format code which, by default, transforms into slightly
 less visible text(?) used in ManaVM's documentation to represent leading
 namespaces in a type or function name.
 
-In custom CSS you can refer to it as the class C<.pod_format_H>.
-
 =item The C<< =table >> and C<< =row >> directives
 
 Since tables are rather useful in documentation and constructing them from
@@ -81,11 +79,11 @@ like joining cells are not supported.
 
 The syntax is as follows:
 
- =table Title#1 | Title#2 | Title#3
+ =table Title#1 T<> Title#2 T<> Title#3
 
- =row Row 1 Elem#1 | Elem#2 | Elem#3
+ =row Row 1 Elem#1 T<> Elem#2 T<> Elem#3
 
- =row Row 2 Elem#1 | Elem#2 | Elem#3
+ =row Row 2 Elem#1 T<> Elem#2 T<> Elem#3
 
 A =table directive followed by one ore more =row directives define a table. For
 multiple tables after one-another, just start a new =table directive. The
@@ -136,7 +134,12 @@ default Mana::Doc style applied (if applicable in target format).
   </tr>
 </table>
 
-The pipes are used to separate the columns in the table.
+The TE<lt>E<gt> format codes are used to separate the columns in the table. If
+they contain any text it is silently ignored.
+
+If the rows contain different number of columns, the look of the table is
+implementation defined. HTML will probably look acceptable (because browsers are
+used to rendering irredeemably broken HTML), while man will probably break badly.
 
 =back
 

@@ -2,3 +2,6 @@ Revision history for Mana-Doc
 
 {{$NEXT}}
         - Initial release
+        - HTML: Provide POD functionality
+        - HTML: Add H<> extension
+        - HTML: Add =table, =row, and T<> extensions

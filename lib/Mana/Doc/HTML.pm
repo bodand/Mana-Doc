@@ -145,7 +145,7 @@ sub new :prototype($%) {
       output       => $output,
       omit_css     => $opts{omit_css} // 0,
       embed_css    => $opts{embed_css} // 1,
-      ext_css_name => $opts{ext_css_name} // 'pod_html5.css',
+      ext_css_name => $opts{ext_css_name},
 
       in_dl        => 0,
       in_dd        => 0,
@@ -153,6 +153,7 @@ sub new :prototype($%) {
       tree         => undef,
       source       => undef
   };
+  $self->{ext_css_name} //= $self->{omit_css} ? undef : 'mana_doc.css';
 
   bless $self, __PACKAGE__;
   return $self;
@@ -656,3 +657,111 @@ sub _transform :prototype($_) {
 }
 
 1;
+
+__END__
+
+=pod
+
+=encoding UTF-8
+
+=head1 NAME
+
+Mana::Doc::HTML - The HTML backend for Mana::Doc
+
+=head1 DESCRIPTION
+
+This module provides the HTML backend for rendering Mana::Doc documents.
+
+=head2 Construction
+
+When construction the following options can be provided to Mana::Doc::new to
+pass through to Mana::Doc::HTML.
+
+
+=over 2
+
+=item I<output> // undef
+
+Is used to specify the output file to generate. Different types can be used
+
+=over 2
+
+=item SCALAR-ref
+
+The produced content will be appended to the string of the reference.
+
+=item ARRAY-ref
+
+Pieces of content will be pushed to the array of the reference.
+
+=item GLOB-ref
+
+Or a filehandle in general. Output will be written to the specified file which
+should be opened for writing. If not behavior is undefined.
+
+=item SCALAR
+
+The string value of the variable will be opened as a file for writing and the
+generated content will be written there.
+
+=item C<undef>
+
+If the value is not defined output is written to C<STDOUT>.
+
+=back
+
+=item I<omit_css> // 0
+
+If this option is enabled, no CSS will be generated for use by the HTML output.
+This is useful if you want to supply your own CSS files, and therefore have no
+need for the Mana::Doc defaults.
+
+This option always overrides all other CSS related options; if it is enabled
+all others will be ignored.
+
+=item I<embed_css> // 1
+
+When using the default Mana::Doc CSS, this option can be set (as is by default)
+to embed it into the HTML file. This is useful if you'd otherwise have only one
+file with all your documentation but the external CSS would be another one to
+handle.
+
+As of now, you cannot specify external files to get embedded, only the Mana::Doc
+CSS can be embedded this way (or by Mana::Doc::HTML in general).
+
+=item I<ext_css_name> // (I<omit_css> ? C<undef> : C<mana_doc.css>)
+
+If I<embed_css> is set this option is ignored.
+
+If I<omit_css> is set, and this is C<undef> the HTML will be generated completely
+without CSS and it won't link to anything.
+
+If I<omit_css> is set, but this is defined, the generated HTML file will link
+to an external CSS of the name specified in this option.
+
+If I<omit_css> is not set, the default Mana::Doc CSS file will be written to
+the filename specified here and the HTML file will link to it as an external
+file.
+
+=back
+
+=head1 SEE ALSO
+
+L<Mana::Doc> - For the Mana::Doc format documentation.
+
+L<manadoc> - For the command line tool for using Mana::Doc.
+
+=head1 AUTHOR
+
+András Bodor E<lt>bodand@pm.meE<gt>
+
+=head1 COPYRIGHT
+
+Copyright (c) 2021- András Bodor
+
+=head1 LICENSE
+
+This library is actually free software; you can use, modify, sell, and/or
+redistribute it in whole or in parts under the BSD 3-Clause license.
+
+=cut
