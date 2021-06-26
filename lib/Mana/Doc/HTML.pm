@@ -251,6 +251,20 @@ sub _output :prototype($$;$) {
   }
 }
 
+sub _start_dd :prototype($) {
+  my ($self) = @_;
+  if ($self->{in_dl}) {
+    $self->_output(q{<dd class="pod_list_body pod_list pod_content">});
+  }
+}
+
+sub _end_dd :prototype($) {
+  my ($self) = @_;
+  if ($self->{in_dl}) {
+    $self->_output(q{</dd>});
+  }
+}
+
 sub _transform :prototype($_);
 
 sub _transform_Document :prototype($$@) {
@@ -333,21 +347,19 @@ sub _transform_head5 :prototype($$@) { unshift @_, 5; goto &_transform_head_n; }
 sub _transform_head6 :prototype($$@) { unshift @_, 6; goto &_transform_head_n; }
 
 sub _transform_Para :prototype($$@) {
-  state @p_start = (<<'P_EOF', <<'DD_EOF');
+  state $p_start = <<'P_EOF';
 <p class="pod_paragraph pod_content">
 P_EOF
-<dd class="pod_list_body pod_list pod_content"><p class="pod_paragraph pod_content">
-DD_EOF
-  state @p_end = (<<'P_EOF', <<'DD_EOF');
+  state $p_end = <<'P_EOF';
 </p>
 P_EOF
-</p></dd>
-DD_EOF
 
   my ($self, undef, @children) = @_;
-  $self->_output($p_start[$self->{in_dl}]);
+  $self->_start_dd;
+  $self->_output($p_start);
   $self->_transform($_) for @children;
-  $self->_output($p_end[$self->{in_dl}]);
+  $self->_output($p_end);
+  $self->_end_dd;
 }
 
 sub _transform_Verbatim :prototype($$@) {
@@ -358,9 +370,11 @@ sub _transform_Verbatim :prototype($$@) {
 PRE_EOF
 
   my ($self, undef, @children) = @_;
+  $self->_start_dd;
   $self->_output($pre_start);
   $self->_transform($_) for @children;
   $self->_output($pre_end);
+
 }
 
 sub _transform_fmt :prototype($$$@) {
@@ -478,9 +492,11 @@ DIV_EOF
 DIV_EOF
 
   my ($self, undef, @children) = @_;
+  $self->_start_dd;
   $self->_output($div_start);
   $self->_transform($_) for @children;
   $self->_output($div_end);
+  $self->_end_dd;
 }
 
 sub _transform_over_number :prototype($$@) {
@@ -492,9 +508,11 @@ OL_EOF
 OL_EOF
 
   my ($self, undef, @children) = @_;
+  $self->_start_dd;
   $self->_output($ol_start);
   $self->_transform($_) for @children;
   $self->_output($ol_end);
+  $self->_end_dd;
 }
 
 sub _transform_over_bullet :prototype($$@) {
@@ -506,9 +524,11 @@ UL_EOF
 UL_EOF
 
   my ($self, undef, @children) = @_;
+  $self->_start_dd;
   $self->_output($ul_start);
   $self->_transform($_) for @children;
   $self->_output($ul_end);
+  $self->_end_dd;
 }
 
 sub _transform_over_text :prototype($$@) {
@@ -520,11 +540,13 @@ DL_EOF
 DL_EOF
 
   my ($self, undef, @children) = @_;
+  $self->_start_dd;
   $self->_output($dl_start);
   $self->{in_dl} = 1;
   $self->_transform($_) for @children;
   $self->{in_dl} = 0;
   $self->_output($dl_end);
+  $self->_end_dd;
 }
 
 sub _transform_for :prototype($$@) {
@@ -555,8 +577,11 @@ TABLE_EOF
   my ($self, undef, @children) = @_;
   push @children, ['T'] unless
       ref($children[-1]) eq 'ARRAY' && $children[-1]->[0] eq 'T';
-  $self->{in_table} = 1;
+
+  $self->_start_dd;
   $self->_output($table_start);
+
+  $self->{in_table} = 1;
   my $need_th = 1;
   for (@children) {
     if ($need_th) {
@@ -609,24 +634,18 @@ sub _transform :prototype($_) {
   my ($self, $pod_structure) = @_;
 
   if (ref($pod_structure) eq '') {
-    if ($self->{nbsp}) {
-      $pod_structure =~ s/ /&nbsp;/g;
-    }
     $self->_output(escape_html($pod_structure));
     return;
   }
 
   ## <table> ending
   my $type = $pod_structure->[0];
-  $type =~ s/\W/_/;
+  $type =~ s/\W/_/g;
   my $func = "_transform_$type";
   if ($self->{in_table}
       && !($self->{in_table} = $type =~ /\Atable|row|[BCHIFXL]\z/)) {
-    if ($self->{in_dl}) {
-      $self->_output(qq{</table></dd>})
-    } else {
-      $self->_output(qq{</table>})
-    }
+    $self->_output(qq{</table>});
+    $self->_end_dd;
   }
 
   no strict 'refs';
