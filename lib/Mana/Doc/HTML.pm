@@ -18,6 +18,7 @@ my $css_text = <<'CSS_EOF';
   --shadow-blue:   #01cdff;
   --shadow-green:  #1dff89;
   --shadow-yellow: #d7d243;
+  --shadow-pink:   #8843d7;
 
   --header-shadow: 3px 3px 1px 1px;
   --border-width: 1px;
@@ -88,15 +89,33 @@ a:link, a:visited, a:active {
   color: var(--pale-fg-color);
 }
 
-.pod_list_head {
+.pod_list_header {
   width: max-content;
   margin: 0 40px;
   border: var(--border-width) solid var(--shadow-border);
   box-shadow: var(--header-shadow) var(--shadow-yellow);
 }
 
-.pod_header a {
-    color: var(--fg-color);
+.pod_table {
+  width: max-content;
+  margin: 10px 12px;
+  padding: 5px 20px;
+  border: var(--border-width) solid var(--shadow-border);
+  box-shadow: var(--header-shadow) var(--shadow-pink);
+}
+
+.pod_table_cell {
+  padding: 1px 15px;
+}
+
+._pod_table_head_bar {
+  width: 70%;
+  margin: 0 auto;
+  color: var(--shadow-border);
+}
+
+.pod_header a, .pod_list_header a {
+  color: var(--fg-color);
 }
 CSS_EOF
 
@@ -129,6 +148,8 @@ sub new :prototype($%) {
       ext_css_name => $opts{ext_css_name} // 'pod_html5.css',
 
       in_dl        => 0,
+      in_dd        => 0,
+      in_table     => 0,
       tree         => undef,
       source       => undef
   };
@@ -142,10 +163,10 @@ sub parse :prototype($$) {
   my $pod = Pod::Simple::SimpleTree->new;
   $pod->complain_stderr(1);
   $pod->nbsp_for_S(1);
-  $pod->accept_directive_as_processed("table");
-  $pod->accept_directive_as_processed("row");
+  $pod->accept_directive_as_processed('table');
+  $pod->accept_directive_as_processed('row');
   $pod->accept_targets(qw/html mana_html/);
-  $pod->accept_codes(qw/H/);
+  $pod->accept_codes(qw/H T/);
 
   if (ref($src) eq 'SCALAR') {
     $self->{source} = 'in-memory';
@@ -373,6 +394,10 @@ sub _transform_F :prototype($$@) {
   goto &_transform_fmt;
 }
 
+sub _transform_T :prototype($$@) {
+  warn "T<> formatting code used outside of =table or =row";
+}
+
 sub _transform_X :prototype($$@) {
   my ($self, undef, @children) = @_;
   local $" = ' ';
@@ -428,7 +453,7 @@ sub _transform_item_text :prototype($$@) {
   my $frag = _anchorize(_strip_formats_and_join(@children));
 
   my $dt_start = <<"DT_EOF";
-<dt class="pod_list_head pod_list pod_content">
+<dt class="pod_list_header pod_list pod_content">
   <a name="$frag"></a>
   <a href="#$frag"><p class="pod_paragraph pod_content">
 DT_EOF
@@ -522,6 +547,64 @@ DIV_EOF
   $self->_output($div_end);
 }
 
+sub _transform_table :prototype($$@) {
+  state $table_start = <<'TABLE_EOF';
+<table class="mana_table pod_table pod_content">
+TABLE_EOF
+
+  my ($self, undef, @children) = @_;
+  push @children, ['T'] unless
+      ref($children[-1]) eq 'ARRAY' && $children[-1]->[0] eq 'T';
+  $self->{in_table} = 1;
+  $self->_output($table_start);
+  my $need_th = 1;
+  for (@children) {
+    if ($need_th) {
+      $self->_output(q{<th class="pod_table_head pod_table_cell pod_content">});
+      $need_th = 0;
+    }
+    if (ref($_) eq 'ARRAY' && $_->[0] eq 'T') {
+      $self->_output(q{<hr class="_pod_table_head_bar"></th>});
+      $need_th = 1;
+      next;
+    }
+
+    $self->_transform($_);
+  }
+}
+
+sub _transform_row :prototype($$@) {
+  state $row_start = <<'DIV_EOF';
+<tr class="pod_table_row pod_content">
+DIV_EOF
+  state $row_end = <<'DIV_EOF';
+</tr>
+DIV_EOF
+
+  my ($self, undef, @children) = @_;
+  die "insanity: =row must follow a =table directive (or another =row)"
+      unless $self->{in_table};
+
+  push @children, [ 'T' ] unless
+      ref($children[-1]) eq 'ARRAY' && $children[-1]->[0] eq 'T';
+  $self->_output($row_start);
+  my $need_td = 1;
+  for (@children) {
+    if ($need_td) {
+      $self->_output(q{<td class="pod_table_data pod_table_cell pod_content">});
+      $need_td = 0;
+    }
+    if (ref($_) eq 'ARRAY' && $_->[0] eq 'T') {
+      $self->_output(q{</td>});
+      $need_td = 1;
+      next;
+    }
+
+    $self->_transform($_);
+  }
+  $self->_output($row_end);
+}
+
 sub _transform :prototype($_) {
   my ($self, $pod_structure) = @_;
 
@@ -533,9 +616,18 @@ sub _transform :prototype($_) {
     return;
   }
 
+  ## <table> ending
   my $type = $pod_structure->[0];
   $type =~ s/\W/_/;
   my $func = "_transform_$type";
+  if ($self->{in_table}
+      && !($self->{in_table} = $type =~ /\Atable|row|[BCHIFXL]\z/)) {
+    if ($self->{in_dl}) {
+      $self->_output(qq{</table></dd>})
+    } else {
+      $self->_output(qq{</table>})
+    }
+  }
 
   no strict 'refs';
   if ($self->can($func)) {
