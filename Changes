@@ -1,6 +1,8 @@
 Revision history for Mana-Doc
 
 {{$NEXT}}
+
+v0.1  2021-06-26 15:59:49 CEST
         - Initial release
         - HTML: Provide POD functionality
         - HTML: Add H<> extension
