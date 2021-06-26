@@ -4,7 +4,7 @@ use v5.10;
 use strict;
 use warnings;
 use utf8;
-use version; our $VERSION = version->declare('v0.2');
+use version; our $VERSION = version->declare('v0.1.1');
 
 use HTML::Escape qw/escape_html/;
 use Pod::Simple::SimpleTree;
@@ -274,7 +274,7 @@ sub _transform_Document :prototype($$@) {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Pod Documentation</title>
+  <title>Mana::Doc Documentation</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -291,15 +291,36 @@ HTML_EOF
 HTML_EOF
 
   my ($self, undef, @children) = @_;
+  # Title fix
   if (eval {$children[0]->[2] =~ /\ANAME\z/i}) {
-    $self->_output($html_start =~ s/Pod Documentation/$children[1]->[2]/r);
+    $self->_output($html_start =~ s/Mana::Doc Documentation/$children[1]->[2]/r);
   }
   else {
     $self->_output($html_start);
   }
-  if (!$self->{omit_css} && $self->{embed_css}) {
-    $self->_output(qq{<style>\n$css_text\n</style>});
+
+  # CSS
+  if (!$self->{omit_css}) {
+    if ($self->{embed_css}) {
+      $self->_output(qq{<style>\n$css_text\n</style>});
+    }
+    else {
+      Carp::croak 'ext_css_name needs to be defined if omit_css is unset'
+          if !defined($self->{ext_css_name});
+
+      local $! = 0;
+      open my $css, '>', $self->{ext_css_name}
+          or die "cannot open to-be-generated external CSS file: $self->{ext_css_name}: $!";
+      $self->_output(qq{<link rel="stylesheet" type="text/css" href="$self->{ext_css_name}">\n});
+      print $css $css_text;
+    }
   }
+  elsif ($self->{omit_css}) {
+    if (defined $self->{ext_css_name}) {
+      $self->_output(qq{<link rel="stylesheet" type="text/css" href="$self->{ext_css_name}">\n});
+    }
+  }
+
   $self->_output(qq{</head>\n<body>\n});
   $self->_transform($_) for @children;
   $self->_output($html_end);
