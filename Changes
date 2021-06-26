@@ -1,6 +1,8 @@
 Revision history for Mana-Doc
 
 {{$NEXT}}
+
+v0.1.1  2021-06-26 16:18:32 CEST
         - HTML: External CSS file linkage is implemented and provided as described
           in the documentation of Mana::Doc::HTML.
         - HTML: Change title for unnamed docs to Mana::Doc Documentation

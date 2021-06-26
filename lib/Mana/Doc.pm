@@ -4,7 +4,7 @@ use v5.10;
 use strict;
 use warnings;
 use utf8;
-use version; our $VERSION = version->declare('v0.1');
+use version; our $VERSION = version->declare('v0.1.1');
 
 sub new : prototype($%) {
   my ($class, %opts) = @_;
